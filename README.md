@@ -1,10 +1,10 @@
-# TixFlow 🚀
+# TixFlow 
 
 ML-powered ticket classification and routing system with FastAPI and AWS deployment.
 
 ---
 
-## 🔥 Overview
+##  Overview
 
 TixFlow is an end-to-end backend system that automatically classifies customer support tickets and routes them to the appropriate team with priority levels.
 
@@ -15,7 +15,7 @@ It combines:
 
 ---
 
-## ⚙️ Features
+##  Features
 
 - Automated ticket classification
 - Intelligent routing (team + priority)
@@ -25,7 +25,7 @@ It combines:
 
 ---
 
-## 🧠 How It Works
+##  How It Works
 
 1. User sends a ticket (text input)
 2. API processes the request
@@ -39,13 +39,13 @@ It combines:
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 User → FastAPI → Preprocessing → Vectorizer → Model → Mapping → Response
 
 ---
 
-## 📡 API Endpoint
+##  API Endpoint
 
 ### POST `/predict`
 
