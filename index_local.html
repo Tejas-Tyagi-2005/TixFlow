@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TixFlow — Customer Complaint Classifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #f5f6f8;
+      --surface:     #ffffff;
+      --surface2:    #f9fafb;
+      --border:      #e4e7ec;
+      --border-hi:   #c8d0db;
+      --text:        #111827;
+      --text-dim:    #6b7280;
+      --text-muted:  #9ca3af;
+      --accent:      #2563eb;
+      --accent-lo:   #eff4ff;
+      --accent-md:   #dbeafe;
+      --red:         #dc2626;
+      --red-lo:      #fef2f2;
+      --red-border:  #fecaca;
+      --yellow:      #d97706;
+      --yellow-lo:   #fffbeb;
+      --yellow-border:#fde68a;
+      --green:       #059669;
+      --green-lo:    #ecfdf5;
+      --green-border:#a7f3d0;
+      --radius:      8px;
+      --shadow-sm:   0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md:   0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+      --font:        'DM Sans', sans-serif;
+      --font-mono:   'DM Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TOP NAV ── */
+    .topnav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+
+    .nav-brand h1 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    .nav-brand .nav-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: 2px;
+    }
+
+    .nav-sep {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .status-pill:hover { border-color: var(--border-hi); background: #fff; }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .status-dot.live  { background: var(--green); }
+    .status-dot.error { background: var(--red); }
+
+    /* ── LAYOUT ── */
+    .wrapper {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 28px 24px 64px;
+    }
+
+    /* ── PAGE TITLE ── */
+    .page-title {
+      margin-bottom: 24px;
+    }
+    .page-title h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .page-title p {
+      font-size: 13.5px;
+      color: var(--text-dim);
+      margin-top: 3px;
+    }
+
+    /* ── STAT ROW ── */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.15s;
+    }
+    .stat-card:hover { box-shadow: var(--shadow-md); }
+
+    .stat-label {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -0.5px;
+    }
+
+    .stat-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    /* ── MAIN GRID ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    /* ── PANEL ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .panel-icon {
+      width: 26px; height: 26px;
+      border-radius: 5px;
+      background: var(--accent-lo);
+      border: 1px solid var(--accent-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .panel-body { padding: 18px; }
+
+    /* ── LABEL ── */
+    .field-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    /* ── TEXTAREA ── */
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13.5px;
+      line-height: 1.65;
+      padding: 12px 14px;
+      resize: vertical;
+      min-height: 120px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    textarea::placeholder { color: var(--text-muted); }
+
+    .char-count {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+      margin-top: 5px;
+    }
+
+    /* ── BUTTON ── */
+    .btn-predict {
+      width: 100%;
+      margin-top: 14px;
+      padding: 11px 16px;
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-family: var(--font);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+      box-shadow: 0 1px 3px rgba(37,99,235,0.3);
+    }
+    .btn-predict:hover {
+      background: #1d4ed8;
+      box-shadow: 0 3px 10px rgba(37,99,235,0.35);
+    }
+    .btn-predict:active { transform: scale(0.99); }
+    .btn-predict:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* ── SPINNER ── */
+    .spinner {
+      display: none;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULT CARD ── */
+    .result-card {
+      margin-top: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    .result-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .result-tag {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--accent);
+    }
+
+    .result-ts {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+
+    .result-body {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .result-item { grid-column: span 1; }
+    .result-item.full { grid-column: span 2; }
+
+    .result-item-label {
+      font-size: 10.5px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .result-item-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .result-input-text {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      word-break: break-word;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 8px 10px;
+    }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+    .badge.high   { background: var(--red-lo);    color: var(--red);    border: 1px solid var(--red-border); }
+    .badge.medium { background: var(--yellow-lo); color: var(--yellow); border: 1px solid var(--yellow-border); }
+    .badge.low    { background: var(--green-lo);  color: var(--green);  border: 1px solid var(--green-border); }
+
+    .badge.high   .badge-dot { background: var(--red); }
+    .badge.medium .badge-dot { background: var(--yellow); }
+    .badge.low    .badge-dot { background: var(--green); }
+
+    /* ── ERROR ── */
+    .error-banner {
+      display: none;
+      align-items: flex-start;
+      gap: 9px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: var(--red-lo);
+      border: 1px solid var(--red-border);
+      border-radius: 6px;
+      font-size: 12.5px;
+      color: var(--red);
+      line-height: 1.5;
+    }
+    .error-banner.show { display: flex; }
+    .error-banner svg { flex-shrink: 0; margin-top: 1px; }
+
+    /* ── SAMPLES PANEL ── */
+    .samples-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sample-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .sample-item:last-child { border-bottom: none; }
+    .sample-item:hover { background: var(--accent-lo); }
+
+    .sample-category {
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .sample-text {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .sample-arrow {
+      text-align: right;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── HISTORY ── */
+    .history-section {
+      margin-top: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .history-empty {
+      padding: 28px 20px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .history-list {
+      max-height: 210px;
+      overflow-y: auto;
+    }
+    .history-list::-webkit-scrollbar { width: 4px; }
+    .history-list::-webkit-scrollbar-track { background: transparent; }
+    .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      animation: fadeIn 0.25s ease;
+    }
+    .history-item:last-child { border-bottom: none; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-text {
+      font-size: 12px;
+      color: var(--text-dim);
+      max-width: 420px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .history-cat {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .history-time {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 40px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-left {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .footer-right {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .footer-right span { color: var(--accent); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .topnav      { animation: fadeUp 0.3s ease both; }
+    .page-title  { animation: fadeUp 0.35s 0.05s ease both; }
+    .stat-row    { animation: fadeUp 0.35s 0.1s  ease both; }
+    .main-grid   { animation: fadeUp 0.35s 0.15s ease both; }
+    .history-section { animation: fadeUp 0.35s 0.2s ease both; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 720px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .stat-row  { grid-template-columns: 1fr 1fr; }
+      .result-body { grid-template-columns: 1fr; }
+      .result-item.full { grid-column: span 1; }
+      .topnav { padding: 0 16px; }
+      .wrapper { padding: 20px 16px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="nav-brand">
+    <div class="logo-mark">Tx</div>
+    <h1>TixFlow</h1>
+    <div class="nav-sep"></div>
+    <span class="nav-sub">Customer Complaint Classifier</span>
+  </div>
+  <div class="status-pill" id="statusPill" onclick="checkServer()">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Checking API…</span>
+  </div>
+</nav>
+
+<div class="wrapper">
+
+  <!-- PAGE TITLE -->
+  <div class="page-title">
+    <h2>Complaint Classification</h2>
+    <p>Submit a support ticket to automatically route it to the appropriate team.</p>
+  </div>
+
+  <!-- STAT ROW -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-label">Predictions This Session</div>
+      <div class="stat-value" id="statCount">0</div>
+      <div class="stat-sub">total tickets classified</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Last Category</div>
+      <div class="stat-value" id="statCat" style="font-size:15px;padding-top:5px;">—</div>
+      <div class="stat-sub" id="statTeam">awaiting input</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Last Priority</div>
+      <div id="statPriority" style="margin-top:6px;">
+        <span style="font-size:12px;color:var(--text-muted);">—</span>
+      </div>
+      <div class="stat-sub" id="statTime">no predictions yet</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT: INPUT + RESULT -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-icon">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div class="panel-title">Submit Complaint</div>
+        </div>
+        <div class="panel-body">
+          <label class="field-label" for="inputText">Complaint Text</label>
+          <textarea
+            id="inputText"
+            placeholder="Paste or type a customer support ticket here…"
+            maxlength="500"
+          ></textarea>
+          <div class="char-count"><span id="charCount">0</span> / 500 characters</div>
+
+          <button class="btn-predict" id="predictBtn" onclick="predict()">
+            <div class="btn-inner">
+              <div class="spinner" id="spinner"></div>
+              <span id="btnLabel">Run Classification</span>
+            </div>
+          </button>
+
+          <div class="error-banner" id="errorBanner">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="6.5" stroke="currentColor"/>
+              <path d="M7 4v3.5M7 9.5v.5" stroke="currentColor" stroke-linecap="round"/>
+            </svg>
+            <span id="errorMsg">Something went wrong.</span>
+          </div>
+
+          <!-- RESULT CARD -->
+          <div class="result-card" id="resultCard">
+            <div class="result-header">
+              <span class="result-tag">Prediction Output</span>
+              <span class="result-ts" id="resultTs"></span>
+            </div>
+            <div class="result-body">
+              <div class="result-item">
+                <div class="result-item-label">Category</div>
+                <div class="result-item-value" id="resCategory">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-item-label">Routed Team</div>
+                <div class="result-item-value" id="resTeam">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-item-label">Priority Level</div>
+                <div id="resPriority"></div>
+              </div>
+              <div class="result-item full">
+                <div class="result-item-label">Input Ticket</div>
+                <div class="result-input-text" id="resInput"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SAMPLES -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <div class="panel-title">Sample Tickets</div>
+      </div>
+      <div class="samples-list" id="samplesList"></div>
+    </div>
+
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-section">
+    <div class="panel-header">
+      <div class="panel-icon" style="background:#ecfdf5;border-color:#a7f3d0;color:#059669;">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </div>
+      <div class="panel-title">Prediction Log</div>
+    </div>
+    <div id="historyContainer">
+      <div class="history-empty" id="historyEmpty">No predictions yet — submit a complaint above to get started.</div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">TixFlow · Customer Complaint Classifier · v1.0</div>
+    <div class="footer-right">API endpoint: <span>3.7.189.38:8000</span></div>
+  </footer>
+
+</div>
+
+<script>
+  const API = 'http://3.7.189.38:8000';
+  let predCount = 0;
+
+  const SAMPLES = [
+    {
+      category: "Billing Issue",
+      text: "@AmericanAir I've been charged twice for the same flight and no one is responding to my emails. This is unacceptable!"
+    },
+    {
+      category: "Technical Problem",
+      text: "Your app keeps crashing every time I try to check my account balance. Happening on both iOS and Android. Fix this ASAP."
+    },
+    {
+      category: "Delivery / Logistics",
+      text: "Package was supposed to arrive 3 days ago. Tracking shows it's been sitting at the warehouse. No updates, no explanation."
+    },
+    {
+      category: "Account Access",
+      text: "I can't log into my account after resetting my password. The reset link expired before I even clicked it. This is ridiculous."
+    }
+  ];
+
+  // Render samples
+  const samplesList = document.getElementById('samplesList');
+  SAMPLES.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'sample-item';
+    el.innerHTML = `
+      <div class="sample-category">${s.category}</div>
+      <div class="sample-text">${s.text}</div>
+      <div class="sample-arrow">Use this →</div>
+    `;
+    el.onclick = () => {
+      const ta = document.getElementById('inputText');
+      ta.value = s.text;
+      ta.dispatchEvent(new Event('input'));
+      ta.focus();
+      hideError();
+    };
+    samplesList.appendChild(el);
+  });
+
+  // Char counter
+  document.getElementById('inputText').addEventListener('input', function () {
+    document.getElementById('charCount').textContent = this.value.length;
+  });
+
+  // Server check
+  async function checkServer() {
+    const dot  = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    dot.className = 'status-dot';
+    text.textContent = 'Checking…';
+    try {
+      const r = await fetch(`${API}/predict`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'ping' })});
+      if (r.ok) {
+        dot.className = 'status-dot live';
+        text.textContent = 'API Online';
+      } else { throw new Error(); }
+    } catch {
+      dot.className = 'status-dot error';
+      text.textContent = 'API Offline';
+    }
+  }
+
+  function showError(msg) {
+    const b = document.getElementById('errorBanner');
+    document.getElementById('errorMsg').textContent = msg;
+    b.classList.add('show');
+  }
+  function hideError() {
+    document.getElementById('errorBanner').classList.remove('show');
+  }
+
+  function setLoading(on) {
+    const btn     = document.getElementById('predictBtn');
+    const spinner = document.getElementById('spinner');
+    const label   = document.getElementById('btnLabel');
+    btn.disabled        = on;
+    spinner.style.display = on ? 'block' : 'none';
+    label.textContent   = on ? 'Classifying…' : 'Run Classification';
+  }
+
+  function priorityBadge(priority) {
+    const p = (priority || '').toLowerCase();
+    if (p === 'high')   return `<span class="badge high"><span class="badge-dot"></span>High</span>`;
+    if (p === 'medium') return `<span class="badge medium"><span class="badge-dot"></span>Medium</span>`;
+    if (p === 'low')    return `<span class="badge low"><span class="badge-dot"></span>Low</span>`;
+    return `<span class="badge medium"><span class="badge-dot"></span>${priority}</span>`;
+  }
+
+  function now() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  async function predict() {
+    const text = document.getElementById('inputText').value.trim();
+    hideError();
+    if (!text) { showError('Please enter a complaint before running classification.'); return; }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+        
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error ${res.status}`);
+      }
+
+      const data = await res.json();
+      const pred = data.prediction;
+      const ts   = now();
+
+      document.getElementById('resCategory').textContent = pred.category || '—';
+      document.getElementById('resTeam').textContent     = pred.team     || '—';
+      document.getElementById('resPriority').innerHTML   = priorityBadge(pred.priority);
+      document.getElementById('resInput').textContent    = data.input    || text;
+      document.getElementById('resultTs').textContent    = ts;
+
+      const card = document.getElementById('resultCard');
+      card.classList.remove('visible');
+      void card.offsetWidth;
+      card.classList.add('visible');
+
+      predCount++;
+      document.getElementById('statCount').textContent  = predCount;
+      document.getElementById('statCat').textContent    = pred.category || '—';
+      document.getElementById('statTeam').textContent   = pred.team     || '—';
+      document.getElementById('statPriority').innerHTML = priorityBadge(pred.priority);
+      document.getElementById('statTime').textContent   = `at ${ts}`;
+
+      document.getElementById('statusDot').className  = 'status-dot live';
+      document.getElementById('statusText').textContent = 'API Online';
+
+      addHistory(text, pred, ts);
+
+    } catch (e) {
+      if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+        showError('Request timed out. Is the FastAPI server running on port 8000?');
+        document.getElementById('statusDot').className   = 'status-dot error';
+        document.getElementById('statusText').textContent = 'API Offline';
+      } else if (e.message.includes('fetch') || e.message.includes('NetworkError') || e.message.includes('Failed to fetch')) {
+        showError('Cannot reach server at 3.7.189.38:8000. Make sure your FastAPI app is running.');
+        document.getElementById('statusDot').className   = 'status-dot error';
+        document.getElementById('statusText').textContent = 'API Offline';
+      } else {
+        showError(e.message || 'Unexpected error. Check the console for details.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function addHistory(text, pred, ts) {
+    document.getElementById('historyEmpty').style.display = 'none';
+    const list = document.getElementById('historyList');
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+      <span class="history-text" title="${text.replace(/"/g,'&quot;')}">${text}</span>
+      <div class="history-meta">
+        <span class="history-cat">${pred.category || '—'}</span>
+        ${priorityBadge(pred.priority)}
+        <span class="history-time">${ts}</span>
+      </div>
+    `;
+    list.prepend(item);
+  }
+
+  document.getElementById('inputText').addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') predict();
+  });
+
+  checkServer();
+</script>
+</body>
+</html>
